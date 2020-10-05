@@ -1,0 +1,5 @@
+{
+    "storage_directory": "filesystem",
+    "replication_level": 3,
+    "storage_servers": ["google.com", "facebook.com", "pornhub.com"]
+}
