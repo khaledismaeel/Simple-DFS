@@ -1,4 +1,10 @@
 import sys
+import random
+import string
+import utilities as utl
 
+storage_servers = []
+    
 if __name__ == '__main__':
-    print(sys.argv)
+    tree = utl.filesystem()
+    tree.print_tree()   

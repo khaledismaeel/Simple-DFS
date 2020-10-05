@@ -4,7 +4,7 @@ import json
 
 if __name__ == '__main__':
     print(f'Running client.')
-
+    
     os.chdir(sys.path[0])
     
     with open('./config.json', 'r') as config_file:
