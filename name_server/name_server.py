@@ -3,14 +3,14 @@ import socket
 from threading import Thread
 import json
 import random
-
+import string
+import shutil
 
 class StorageServerHandler(Thread):
     def __init__(self, sock, request):
         super().__init__(daemon=True)
         self.sock = sock
         self.request = request
-
 
 def create_file(sock, params):
     path = params[0]
@@ -39,12 +39,61 @@ def create_file(sock, params):
                 print(response)
         file.write(json.dumps(containing_storage_servers))
 
+def read_file(sock, params):
+    print(f'Performing read_file on {params}')
+    path = params[0]
+    server_path = storage_directory + path
+    if not os.path.exists(server_path):
+        raise ValueError(f'{server_path}: No such file.')
+    with open(server_path, 'r') as file:
+        file_details = json.load(file)
+        containing_storage_servers = file_details['containing_storage_servers']
+        print(f'Containing storage servers: {containing_storage_servers}')
+        for _ in range(5):
+            chosen_server = random.choice(containing_storage_servers)
+            print(f'Fetching from server {chosen_server}')
+            request = {
+                'command-type': '',
+                'command': 'read',
+                params: [
+                    path
+                ]
+            }
+            print(f'Creating socket.')
+            with socket.socket() as storage_sock:
+                storage_sock.connect(tuple(chosen_server))
+                print(f'Connected. Sending request {request}')
+                storage_sock.send(json.dumps(request).encode())
+                storage_response = json.loads(storage_sock.read(1024).decode())
+                print(f'Got response {storage_response}')
+                if storage_response['message'] == 'OK':
+                    sock.send(json.dumps({'message': 'OK', 'file_size': file_details['size']}))
+                    while True:
+                        data = storage_sock.recv(1024)
+                        if data:
+                            sock.write(data)
+                        else:
+                            break
+        else:
+            print(f'No storage servers could return the file.')
+            response = {
+                'message': 'NO',
+                'details': 'No storage server could return the file.'
+            }
+            sock.send(json.dumps(response).encode())
 
-def add_storage_server(sock, address):
-    storage_servers.append(list(address))
-    sock.send(b'tamm')
-    print(storage_servers)
+def init(sock):
+    print(f'Performing init.')
+    for server in storage_servers:
+        print(f'Connecting to server {server}.')
+        with socket.socket() as storage_socket:
+            storage_socket(json.dumps({'command_type': 'system', 'command': 'init'}).encode())
+            response = json.loads(storage_socket.read(1024).decode())
+            print(response)
+    shutil.rmtree(storage_directory)
 
+def write_file(sock, params):
+    print(f'Performing write_file.')
 
 class ClientHandler(Thread):
     def __init__(self, sock, address):
@@ -57,11 +106,16 @@ class ClientHandler(Thread):
 
         if request_header['command_type'] == 'system':
             if request_header['command'] == 'register-storage-server':
-                add_storage_server(self.sock, address)
-
+                pass
+            if request_header['command'] == 'init':
+                init(sock)
         if request_header['command_type'] == 'file':
             if request_header['command'] == 'create':
-                create_file(sock, request_header['params'])
+                create_file(self.sock, request_header['params'])
+            if request_header['command'] == 'read':
+                read_file(self.sock, request_header['params'])
+            if request_header['command'] == 'write':
+                write_file(self.sock, request_header['params'])
 
         self.sock.close()
 
