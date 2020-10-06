@@ -1,4 +1,4 @@
-import socket, os, json, sys, tqdm
+import socket, os, json, tqdm
 
 SERVER_PORT = 8800
 SERVER_HOST = "0.0.0.0"
@@ -7,9 +7,9 @@ BUFFER_SIZE = 1024
 root_dir = "/home/hussein/dfs_dir"
 
 
-def connect_to_name_server(socket, command, name_server):
+def connect_to_name_server(sock, command, name_server):
     print(f"[+] Connecting to {name_server[0]}:{name_server[1]}")
-    socket.connect(name_server)
+    sock.connect(name_server)
     print("[+] Connected.")
 
     data = {"command_type": "system", "command": command, "params": []}
@@ -17,7 +17,7 @@ def connect_to_name_server(socket, command, name_server):
     registration_sock.send(json_data.encode())
 
     # receive response from the name server
-    received_msg = socket.recv(BUFFER_SIZE).decode()
+    received_msg = sock.recv(BUFFER_SIZE).decode()
     print(received_msg)
 
 
