@@ -8,11 +8,11 @@ root_dir = "/home/hussein/dfs_dir"
 
 
 def connect_to_name_server(socket, command, name_server):
-    print(f"[+] Connecting to {name_server}:{SERVER_PORT}")
-    socket.connect((name_server, SERVER_PORT))
+    print(f"[+] Connecting to {name_server[0]}:{name_server[1]}")
+    socket.connect(name_server)
     print("[+] Connected.")
 
-    data = {"command": command, "param": param}
+    data = {"command_type": "system", "command": command, "params": []}
     json_data = json.dumps(data)
     registration_sock.send(json_data.encode())
 
@@ -74,8 +74,8 @@ def get_file_info(path):
 
 
 if __name__ == '__main__':
-    command = sys.argv[1]
-    param = sys.argv[2]
+    command = 'register-storage-server'
+    param = (input('Enter name server IP: '), int(input('Enter name server port: ')))
     registration_sock = socket.socket()
     connect_to_name_server(registration_sock, command, param)
     registration_sock.close()

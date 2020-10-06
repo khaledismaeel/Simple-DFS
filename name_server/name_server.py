@@ -42,6 +42,8 @@ def create_file(sock, params):
 
 def add_storage_server(sock, address):
     storage_servers.append(list(address))
+    sock.send(b'tamm')
+    print(storage_servers)
 
 
 class ClientHandler(Thread):
