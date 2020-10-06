@@ -53,10 +53,11 @@ class ClientHandler(Thread):
 
     def run(self):
         request_header = json.loads(self.sock.recv(1024).decode())
+        print(request_header)
 
         if request_header['command_type'] == 'system':
-            if request_header['command'] == 'add-storage-server':
-                add_storage_server(sock, address)
+            if request_header['command'] == 'register-storage-server':
+                add_storage_server(self.sock, address)
 
         if request_header['command_type'] == 'file':
             if request_header['command'] == 'create':
