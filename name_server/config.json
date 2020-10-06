@@ -1,5 +1,5 @@
 {
     "storage_directory": "/simple-dfs",
     "replication_level": 1,
-    "storage_servers": []
+    "storage_servers": [["10.0.1.12", 8800], ["10.0.1.12", 8801], ["10.0.1.13", 8800], ["10.0.1.13", 8801]]
 }

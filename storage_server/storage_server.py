@@ -74,11 +74,11 @@ def get_file_info(path):
 
 
 if __name__ == '__main__':
-    command = 'register-storage-server'
-    param = (input('Enter name server IP: '), int(input('Enter name server port: ')))
-    registration_sock = socket.socket()
-    connect_to_name_server(registration_sock, command, param)
-    registration_sock.close()
+    # command = 'register-storage-server'
+    # param = (input('Enter name server IP: '), int(input('Enter name server port: ')))
+    # registration_sock = socket.socket()
+    # connect_to_name_server(registration_sock, command, param)
+    # registration_sock.close()
 
     s = socket.socket()
     s.bind((SERVER_HOST, SERVER_PORT))
