@@ -61,6 +61,7 @@ if __name__ == '__main__':
     sock.listen()
 
     while True:
+        print('listening now...')
         connection, addr = sock.accept()
         print(connection)
         ClientHandler(connection).start()
