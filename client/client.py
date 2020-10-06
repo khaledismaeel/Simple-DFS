@@ -19,8 +19,8 @@ def send_file(socket, filename):
             progress.update(len(bytes_read))
 
 
-def receive_file(socket, filename, filesize, file_dir):
-    filepath = file_dir + filename
+def receive_file(socket, filename, filesize):
+    filepath = filename
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))
     progress = tqdm.tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
@@ -36,7 +36,6 @@ def receive_file(socket, filename, filesize, file_dir):
         return {"message": "File Dowonloaded Successfully"}
     except:
         return {"message": f"Could not download file: {filename}"}
-
 
 
 if __name__ == '__main__':
@@ -57,8 +56,8 @@ if __name__ == '__main__':
     # send the command format to the nameserver
     s.send(json_data.encode())
 
-    # dfs put filepath dir_in_dfs
-    if data["command"] == "put":
+    # dfs write filepath dir_in_dfs
+    if data["command"] == "write":
         filename = data["params"][0]
         send_file(s, filename)
 
@@ -67,10 +66,10 @@ if __name__ == '__main__':
     if data["command"] == "read":
         server_data = s.recv(BUFFER_SIZE).decode()
         server_data = json.loads(server_data)
-        filename = server_data["params"][0]
-        filesize = server_data["params"][1]
-        file_dir = data["params"][1]
-        received = receive_file(s, filename, filesize, file_dir)
+        filepath = data["params"][0]
+        filename = server_data["params"][1]
+        dir_path, filename = os.path.split(filepath)
+        received = receive_file(s, filename)
         s.send(json.dumps(data).encode())
 
     received = s.recv(BUFFER_SIZE).decode()
