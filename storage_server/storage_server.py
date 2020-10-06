@@ -1,26 +1,23 @@
 import socket, os, json, sys, tqdm
 
-SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 8800
-
+SERVER_HOST = "0.0.0.0"
 BUFFER_SIZE = 1024
-SEPARATOR = "<SEPARATOR>"
 
 root_dir = "/home/hussein/dfs_dir"
 
 
-def connect_to_name_server(socket):
-    print(f"[+] Connecting to {SERVER_HOST}:{SERVER_HOST}")
-    socket.connect((SERVER_HOST, SERVER_PORT))
+def connect_to_name_server(socket, command, name_server):
+    print(f"[+] Connecting to {name_server}:{SERVER_PORT}")
+    socket.connect((name_server, SERVER_PORT))
     print("[+] Connected.")
-    command = sys.argv[1]
-    param = sys.argv[2]
+
     data = {"command": command, "param": param}
     json_data = json.dumps(data)
-    s.send(json_data.encode())
+    registration_sock.send(json_data.encode())
 
     # receive response from the name server
-    received_msg = s.recv(BUFFER_SIZE).decode()
+    received_msg = socket.recv(BUFFER_SIZE).decode()
     print(received_msg)
 
 
@@ -77,8 +74,10 @@ def get_file_info(path):
 
 
 if __name__ == '__main__':
+    command = sys.argv[1]
+    param = sys.argv[2]
     registration_sock = socket.socket()
-    connect_to_name_server(registration_sock)
+    connect_to_name_server(registration_sock, command, param)
     registration_sock.close()
 
     s = socket.socket()
@@ -99,9 +98,8 @@ if __name__ == '__main__':
 
         if data["command"] == "put":
             filepath = data["params"][0]
-            file_dir = data["params"][1]
-            filesize = data["params"][2]
-            receive_file(client_socket, filepath, file_dir, filesize)
+            filesize = data["params"][1]
+            receive_file(client_socket, filepath, filesize)
 
         if data["command"] == "delete":
             filepath = data["params"][0]
@@ -113,7 +111,7 @@ if __name__ == '__main__':
 
         if data["command"] == "read":
             filepath = data["params"][0]
-            send_file(client_socket)
+            send_file(client_socket, filepath)
 
 
         client_socket.close()
