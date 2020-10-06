@@ -53,6 +53,29 @@ def receive_file(socket, path, filesize):
         return {"message": f"Could not download file: {path}"}
 
 
+def send_file(socket, filename):
+    filesize = os.path.getsize(filename)
+    progress = tqdm.tqdm(range(filesize), f"Sending {filename}", unit="B", unit_scale=True, unit_divisor=1024)
+    with open(filename, "rb") as f:
+        for _ in progress:
+            bytes_read = f.read(BUFFER_SIZE)
+            if not bytes_read:
+                break
+
+            socket.sendall(bytes_read)
+            progress.update(len(bytes_read))
+
+
+def delete_file(path):
+    filepath = path + root_dir
+    os.remove(filepath)
+
+
+def get_file_info(path):
+    filepath = path + root_dir
+    os.path.getsize(filepath)
+
+
 if __name__ == '__main__':
     registration_sock = socket.socket()
     connect_to_name_server(registration_sock)
@@ -74,8 +97,24 @@ if __name__ == '__main__':
             print(json.dumps(create_file(data["params"][0])))
             client_socket.send(json.dumps(create_file(data["params"][0])).encode())
 
-        if data["command"] == "write":
-            file = data["params"][0]
+        if data["command"] == "put":
+            filepath = data["params"][0]
+            file_dir = data["params"][1]
+            filesize = data["params"][2]
+            receive_file(client_socket, filepath, file_dir, filesize)
+
+        if data["command"] == "delete":
+            filepath = data["params"][0]
+            delete_file(filepath)
+
+        if data["command"] == "info":
+            filepath = data["params"][0]
+            get_file_info(filepath)
+
+        if data["command"] == "read":
+            filepath = data["params"][0]
+            send_file(client_socket)
+
 
         client_socket.close()
     s.close()
