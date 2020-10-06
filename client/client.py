@@ -2,7 +2,7 @@ import socket, sys, json, os, tqdm
 
 BUFFER_SIZE = 1024 # send 4096 bytes each time step
 
-host = "10.91.53.24"  # The IP of the instance
+host = "10.0.1.11"  # The IP of the instance
 port = 8800
 
 
