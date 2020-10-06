@@ -4,13 +4,13 @@ from threading import Thread
 import json
 import random
 
-class StorageServerHandler(Thread):
-    def __init__(self, sock):
-        super().__init__(daemon = True)
-        self.sock = sock
 
-    def run(self):
-        pass
+class StorageServerHandler(Thread):
+    def __init__(self, sock, request):
+        super().__init__(daemon=True)
+        self.sock = sock
+        self.request = request
+
 
 def create_file(sock, params):
     path = params[0]
@@ -20,7 +20,12 @@ def create_file(sock, params):
     if not os.path.exists(os.path.dirname(server_path)):
         os.makedirs(os.path.dirname(server_path))
     with open(server_path, 'w') as file:
-        containing_storage_servers = random.sample(storage_servers, replication_level)
+        if replication_level > len(storage_servers):
+            print(
+                f'Not enough storage servers, current: {len(storage_servers)}, needed: {replication_level}.')
+            print(f'will replicate to the available ones for now.')
+        containing_storage_servers = random.sample(
+            storage_servers, min(replication_level, len(storage_servers)))
         for server in containing_storage_servers:
             request = {
                 'command_type': 'file',
@@ -34,19 +39,29 @@ def create_file(sock, params):
                 print(response)
         file.write(json.dumps(containing_storage_servers))
 
+
+def add_storage_server(sock, address):
+    storage_servers.append(list(address))
+
+
 class ClientHandler(Thread):
-    def __init__(self, sock):
-        super().__init__(daemon = True)
+    def __init__(self, sock, address):
+        super().__init__(daemon=True)
         self.sock = sock
-    
+
     def run(self):
         request_header = json.loads(self.sock.recv(1024).decode())
-        
+
+        if request_header['command_type'] == 'system':
+            if request_header['command'] == 'add-storage-server':
+                add_storage_server(sock, address)
+
         if request_header['command_type'] == 'file':
             if request_header['command'] == 'create':
                 create_file(sock, request_header['params'])
-        
+
         self.sock.close()
+
 
 if __name__ == '__main__':
     with open('config.json', 'r') as config_file:
@@ -61,9 +76,8 @@ if __name__ == '__main__':
     sock.listen()
 
     while True:
-        print('listening now...')
-        connection, addr = sock.accept()
-        print(connection)
-        ClientHandler(connection).start()
-    
+        connection, address = sock.accept()
+        print(f'Accepted')
+        ClientHandler(connection, address).start()
+
     sock.close()
