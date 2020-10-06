@@ -54,6 +54,7 @@ def send_file(socket, filename):
     filesize = os.path.getsize(filename)
     progress = tqdm.tqdm(range(filesize), f"Sending {filename}", unit="B", unit_scale=True, unit_divisor=1024)
     with open(filename, "rb") as f:
+        socket.send(json.dumps({"message": "OK"}).encode())
         for _ in progress:
             bytes_read = f.read(BUFFER_SIZE)
             if not bytes_read:
