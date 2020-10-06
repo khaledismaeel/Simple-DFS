@@ -1,6 +1,5 @@
 import socket, sys, json, os, tqdm
 
-SEPARATOR = "<SEPARATOR>"
 BUFFER_SIZE = 1024 # send 4096 bytes each time step
 
 host = "10.91.53.24"  # The IP of the instance
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     # usage: dfs read filepath_in_dfs dir_in_client
     if data["command"] == "read":
         server_data = s.recv(BUFFER_SIZE).decode()
-        server_data = json.loads(data)
+        server_data = json.loads(server_data)
         filename = server_data["params"][0]
         filesize = server_data["params"][1]
         file_dir = data["params"][1]
