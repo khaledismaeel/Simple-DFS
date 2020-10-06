@@ -1,5 +1,4 @@
 import socket
-import tqdm
 import os
 import json
 
@@ -27,20 +26,20 @@ def create(path):
 if __name__ == '__main__':
     s = socket.socket()
     s.bind((SERVER_HOST, SERVER_PORT))
-
     s.listen(5)
-    print(f"[*] Listening as {SERVER_HOST}:{SERVER_PORT}")
 
-    client_socket, address = s.accept()
-    print(f"[+] {address} is connected.")
+    while True:
+        print(f"[*] Listening as {SERVER_HOST}:{SERVER_PORT}")
+        client_socket, address = s.accept()
+        print(f"[+] {address} is connected.")
 
-    data = client_socket.recv(BUFFER_SIZE).decode()
-    data = json.loads(data)
+        data = client_socket.recv(BUFFER_SIZE).decode()
+        data = json.loads(data)
 
-    if data["command"] == "create":
-        print(data["params"][0])
-        print(json.dumps(create(data["params"][0])))
-        client_socket.send(json.dumps(create(data["params"][0])).encode())
+        if data["command"] == "create":
+            print(data["params"][0])
+            print(json.dumps(create(data["params"][0])))
+            client_socket.send(json.dumps(create(data["params"][0])).encode())
 
-    client_socket.close()
+        client_socket.close()
     s.close()

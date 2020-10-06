@@ -1,9 +1,6 @@
 import socket
-import tqdm
-import os
 import sys
 import json
-import argparse
 
 SEPARATOR = "<SEPARATOR>"
 BUFFER_SIZE = 1024 # send 4096 bytes each time step
