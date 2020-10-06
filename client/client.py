@@ -20,6 +20,26 @@ def send_file(socket, filename):
             progress.update(len(bytes_read))
 
 
+def receive_file(socket, filename, filesize, file_dir):
+    filepath = file_dir + filename
+    if not os.path.exists(os.path.dirname(filepath)):
+        os.makedirs(os.path.dirname(filepath))
+    progress = tqdm.tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
+    try:
+        with open(filepath, "wb") as f:
+            for _ in progress:
+                bytes_read = socket.recv(BUFFER_SIZE)
+                if not bytes_read:
+                    break
+
+                f.write(bytes_read)
+                progress.update(len(bytes_read))
+        return {"message": "File Dowonloaded Successfully"}
+    except:
+        return {"message": f"Could not download file: {filename}"}
+
+
+
 if __name__ == '__main__':
     command_type = sys.argv[1]
     command = sys.argv[2]
@@ -42,6 +62,17 @@ if __name__ == '__main__':
     if data["command"] == "put":
         filename = data["params"][0]
         send_file(s, filename)
+
+    # download a file from the dfs to the client
+    # usage: dfs read filepath_in_dfs dir_in_client
+    if data["command"] == "read":
+        server_data = s.recv(BUFFER_SIZE).decode()
+        server_data = json.loads(data)
+        filename = server_data["params"][0]
+        filesize = server_data["params"][1]
+        file_dir = data["params"][1]
+        received = receive_file(s, filename, filesize, file_dir)
+        s.send(json.dumps(data).encode())
 
     received = s.recv(BUFFER_SIZE).decode()
     print(received)
