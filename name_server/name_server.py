@@ -8,19 +8,21 @@ import shutil
 
 def pad(s):
     ret = s
-    while len(s) < 1024:
-        ret += b'\x00'
+    while len(ret) < 1024:
+        ret += ' '
     return ret
 
 def init(sock):
     print(f'Performing init.')
     for server in storage_servers:
         print(f'Connecting to server {server}.')
-        with socket.socket() as storage_socket:
-            storage_socket(json.dumps({'command_type': 'system', 'command': 'init'}).encode())
-            response = json.loads(storage_socket.read(1024).decode())
+        with socket.socket() as storage_sock:
+            storage_sock.connect(tuple(server))
+            storage_sock.send(json.dumps({'command_type': 'system', 'command': 'init'}).encode())
+            response = json.loads(storage_sock.recv(1024).decode())
             print(response)
-    shutil.rmtree(storage_directory)
+    if os.path.exists(storage_directory):
+        shutil.rmtree(storage_directory)
 
 def create_file(sock, params):
     path = params[0]
@@ -92,7 +94,7 @@ def read_file(sock, params):
                 'command_type': 'file',
                 'command': 'read',
                 'params': [
-                    path
+                    abs_path
                 ]
             }
             print(f'Creating socket.')
@@ -103,9 +105,11 @@ def read_file(sock, params):
                 storage_response = json.loads(storage_sock.recv(1024).decode())
                 print(f'Got response {storage_response}')
                 if storage_response['status'] == 'OK':
-                    sock.send(pad(json.dumps({'message': 'OK', 'file_size': file_details['size']}).encode()))
+                    sock.send(pad(json.dumps({'status': 'OK', 'file_size': file_details['size']})).encode())
                     bytes_read = storage_sock.recv(storage_response['size'])
                     sock.send(bytes_read)
+                    print(f'a{bytes_read}b')
+                    
                     break
         else:
             print(f'No storage servers could return the file.')
@@ -132,6 +136,7 @@ def write_file(sock, params):
             'details': 'Another file with the same name already exists.'
         }
         sock.send(json.dumps(response).encode())
+        return
 
     if not os.path.exists(os.path.dirname(server_path)):
         os.makedirs(os.path.dirname(server_path))
