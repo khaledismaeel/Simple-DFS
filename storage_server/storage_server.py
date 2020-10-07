@@ -36,38 +36,33 @@ def create_file(path):
                 "details": 'Failed to delete %s. Reason: %s' % (filepath, e)}}
 
 
-def receive_file(socket, path, filesize):
+def receive_file(sock, path, filesize):
     filepath = root_dir + path
     # progress = tqdm.tqdm(range(filesize), f"Receiving {path}", unit="B", unit_scale=True, unit_divisor=1024)
     try:
         with open(filepath, "wb") as f:
-            read_so_far = 0
-            while read_so_far < filesize:
-                bytes_read = f.recv(BUFFER_SIZE)
-                if not bytes_read:
-                    break
-                socket.write(bytes_read)
-                read_so_far += len(bytes_read)
+            bytes_read = sock.recv(filesize)
+            f.write(bytes_read)
         return {"status": "OK",
                 "details": "File Dowonloaded Successfully"}
     except Exception as e:
         return {"status": "FAILED",
-                "details": 'Failed to delete %s. Reason: %s' % (path, e)}
+                "details": 'Failed to download %s. Reason: %s' % (path, e)}
 
 
-def send_file(socket, filename):
-    filesize = os.path.getsize(filename)
-    progress = tqdm.tqdm(range(filesize), f"Sending {filename}", unit="B", unit_scale=True, unit_divisor=1024)
+def send_file(sock, filename):
+    try:
+        filesize = os.path.getsize(filename)
+        response = {"status": "OK",
+                "details": "File Found",
+                "size": filesize}
+    except Exception as e:
+        response =  {"status": "FAILED",
+                "details": 'Failed to find file %s. Reason: %s' % (filename, e)}
+    sock.send(json.loads(response).encode())
+    s.send((' ' * (1024 - len(json.loads(response).encode()))).encode())
     with open(filename, "rb") as f:
-        socket.send(json.dumps({"message": "OK"}).encode())
-        for _ in progress:
-            bytes_read = f.read(BUFFER_SIZE)
-            if not bytes_read:
-                break
-
-            socket.sendall(bytes_read)
-            progress.update(len(bytes_read))
-
+        sock.send(f.read())
 
 def delete_file(path):
     filepath = root_dir + path

@@ -67,14 +67,14 @@ if __name__ == '__main__':
     # download a file from the dfs to the client
     # usage: dfs read filepath_in_dfs dir_in_client
     elif data["command"] == "read":
+        s.send(json_data.encode())
         server_data = s.recv(BUFFER_SIZE).decode()
         server_data = json.loads(server_data)
         filepath = data["params"][0]
         filename = server_data["params"][1]
         dir_path, filename = os.path.split(filepath)
         received = receive_file(s, filename)
-        s.send(json_data.encode())
-        s.send(json.dumps(data).encode())
+
 
     else:
         s.send(json_data.encode())
