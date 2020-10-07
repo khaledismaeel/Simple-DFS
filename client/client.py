@@ -72,7 +72,7 @@ if __name__ == '__main__':
         s.send(json.dumps(data).encode())
 
     received = s.recv(BUFFER_SIZE).decode()
-    print("Server response...")
+    print("==================================\nServer response...")
     print(received)
 
     s.close()
