@@ -60,9 +60,8 @@ def send_file(sock, filename):
     except Exception as e:
         response =  {"status": "FAILED",
                 "details": 'Failed to find file %s. Reason: %s' % (filename, e)}
-    sock.send(json.dumps(response).encode())
-    sock.send((' ' * (1024 - len(json.dumps(response).encode()))).encode())
-    print()
+    sock.send((json.dumps(response) + ' ' * (1024 - len(json.dumps(response).encode()))).encode())
+    # sock.send((' ' * (1024 - len(json.dumps(response).encode()))).encode())
     with open(filename, "rb") as f:
         sock.send(f.read())
 

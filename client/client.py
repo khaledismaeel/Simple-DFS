@@ -47,6 +47,7 @@ if __name__ == '__main__':
 
     # Create socket and connect to nameserver
     s = socket.socket()
+    s.bind(('', 8800))
     print(f"[+] Connecting to {host}:{port}")
     s.connect((host, port))
     print("[+] Connected.")
