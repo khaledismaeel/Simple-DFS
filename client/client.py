@@ -61,6 +61,7 @@ if __name__ == '__main__':
         json_data = json.dumps(data)
         print(json_data)
         s.send(json_data.encode())
+        s.send((' '*(1024 - len(json_data.encode()))).encode())
         send_file(s, filename)
 
     # download a file from the dfs to the client
