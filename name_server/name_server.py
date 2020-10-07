@@ -18,11 +18,16 @@ def init(sock):
 
 def create_file(sock, params):
     path = params[0]
-    abs_path = current_directory + '/' + path
+    abs_path = path if path[0] == '/' else current_directory + path
     server_path = storage_directory + abs_path
 
     if os.path.exists(server_path):
-        raise ValueError(f'{server_path}: File already exists.')
+        print(f'File {server_path} already exists.')
+        response = {
+            'message': 'NO',
+            'details': 'File already exists.'
+        }
+        sock.send(json.dumps(response).encode())
         
     if not os.path.exists(os.path.dirname(server_path)):
         os.makedirs(os.path.dirname(server_path))
@@ -38,7 +43,9 @@ def create_file(sock, params):
             request = {
                 'command_type': 'file',
                 'command': 'create',
-                'params': [path]
+                'params': [
+                    abs_path
+                ]
             }
             with socket.socket() as storage_sock:
                 storage_sock.connect(tuple(server))
@@ -230,8 +237,8 @@ def move_file(sock, params):
 
 def change_directory(sock, params):
     path = params[0]
-    abs_path = path if path[0] == '/' else current_directory + '/' + path
-    current_directory = abs_path
+    abs_path = path if path[0] == '/' else current_directory + path
+    current_directory = abs_path + '/'
 
 def list_directory(sock, params):
     path = params[0]
