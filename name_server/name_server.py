@@ -6,14 +6,28 @@ import random
 import string
 import shutil
 
+def init(sock):
+    print(f'Performing init.')
+    for server in storage_servers:
+        print(f'Connecting to server {server}.')
+        with socket.socket() as storage_socket:
+            storage_socket(json.dumps({'command_type': 'system', 'command': 'init'}).encode())
+            response = json.loads(storage_socket.read(1024).decode())
+            print(response)
+    shutil.rmtree(storage_directory)
+
 def create_file(sock, params):
     path = params[0]
-    server_path = storage_directory + path
+    abs_path = current_directory + '/' + path
+    server_path = storage_directory + abs_path
+
     if os.path.exists(server_path):
         raise ValueError(f'{server_path}: File already exists.')
+        
     if not os.path.exists(os.path.dirname(server_path)):
         os.makedirs(os.path.dirname(server_path))
-    with open(server_path, 'w') as file:
+    
+    with open(server_path, 'wb') as file:
         if replication_level > len(storage_servers):
             print(
                 f'Not enough storage servers, current: {len(storage_servers)}, needed: {replication_level}.')
@@ -26,12 +40,17 @@ def create_file(sock, params):
                 'command': 'create',
                 'params': [path]
             }
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as storage_sock:
+            with socket.socket() as storage_sock:
                 storage_sock.connect(tuple(server))
                 storage_sock.send(json.dumps(request).encode())
                 response = json.loads(storage_sock.recv(1024).decode())
                 print(response)
         file.write(json.dumps({'size': 0, 'containing_storage_servers': containing_storage_servers}))
+    response = {
+        'message': 'OK',
+        'details': 'File created successfully.'
+    }
+    sock.send(json.dumps(response).encode())
 
 def read_file(sock, params):
     print(f'Performing read_file on {params}')
@@ -75,16 +94,6 @@ def read_file(sock, params):
                 'details': 'No storage server could return the file.'
             }
             sock.send(json.dumps(response).encode())
-
-def init(sock):
-    print(f'Performing init.')
-    for server in storage_servers:
-        print(f'Connecting to server {server}.')
-        with socket.socket() as storage_socket:
-            storage_socket(json.dumps({'command_type': 'system', 'command': 'init'}).encode())
-            response = json.loads(storage_socket.read(1024).decode())
-            print(response)
-    shutil.rmtree(storage_directory)
 
 def write_file(sock, params):
     print(f'Performing write_file.')
