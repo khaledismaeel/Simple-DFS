@@ -1,4 +1,5 @@
 import socket, os, json, tqdm
+import shutil
 
 SERVER_PORT = 8800
 SERVER_HOST = "0.0.0.0"
@@ -14,7 +15,7 @@ def connect_to_name_server(sock, command, name_server):
 
     data = {"command_type": "system", "command": command, "params": []}
     json_data = json.dumps(data)
-    registration_sock.send(json_data.encode())
+    sock.send(json_data.encode())
 
     # receive response from the name server
     received_msg = sock.recv(BUFFER_SIZE).decode()
@@ -74,12 +75,49 @@ def get_file_info(path):
     os.path.getsize(filepath)
 
 
+def copy_file(src, dst):
+    try:
+        shutil.copyfile(root_dir + src, root_dir + dst)
+        return {"message": "File copied Successfully"}
+    except:
+        return {"message": "Failed to copy file"}
+
+
+def move_file(src, dst):
+    try:
+        shutil.move(root_dir + src, root_dir + dst)
+        return {"message": "File moved Successfully"}
+    except:
+        return {"message": "Failed to move file"}
+
+
+def change_directory(dir_path):
+    try:
+        os.chdir(root_dir + dir_path)
+        return {"message": f"The current directory is: {os.getcwd()}"}
+    except:
+        return {"message": "Failed to change directory, no such directory"}
+
+
+def delete_directory(dir_path):
+    dir_path = root_dir + dir_path
+    for filename in os.listdir(dir_path):
+        file_path = os.path.join(dir_path, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+            return {"message": f"The storage is initialized"}
+        except Exception as e:
+            return {"message": 'Failed to delete %s. Reason: %s' % (file_path, e)}
+
 if __name__ == '__main__':
-    command = 'register-storage-server'
-    param = (input('Enter name server IP: '), int(input('Enter name server port: ')))
-    registration_sock = socket.socket()
-    connect_to_name_server(registration_sock, command, param)
-    registration_sock.close()
+    # command = 'register-storage-server'
+    # param = (input('Enter name server IP: '), int(input('Enter name server port: ')))
+    # registration_sock = socket.socket()
+    # connect_to_name_server(registration_sock, command, param)
+    # registration_sock.close()
 
     s = socket.socket()
     s.bind((SERVER_HOST, SERVER_PORT))
@@ -92,27 +130,56 @@ if __name__ == '__main__':
         data = client_socket.recv(BUFFER_SIZE).decode()
         data = json.loads(data)
 
-        if data["command"] == "create":
-            print(data["params"][0])
-            print(json.dumps(create_file(data["params"][0])))
-            client_socket.send(json.dumps(create_file(data["params"][0])).encode())
+        if data["command_type"] == "file":
+            if data["command"] == "create":
+                print(data["params"][0])
+                print(json.dumps(create_file(data["params"][0])))
+                client_socket.send(json.dumps(create_file(data["params"][0])).encode())
 
-        if data["command"] == "put":
-            filepath = data["params"][0]
-            filesize = data["params"][1]
-            receive_file(client_socket, filepath, filesize)
+            if data["command"] == "write":
+                filepath = data["params"][0]
+                filesize = data["params"][1]
+                received = receive_file(client_socket, filepath, filesize)
+                client_socket.send(json.dumps(received).encode())
 
-        if data["command"] == "delete":
-            filepath = data["params"][0]
-            delete_file(filepath)
+            if data["command"] == "delete":
+                filepath = data["params"][0]
+                delete_file(filepath)
 
-        if data["command"] == "info":
-            filepath = data["params"][0]
-            get_file_info(filepath)
+            if data["command"] == "info":
+                filepath = data["params"][0]
+                get_file_info(filepath)
 
-        if data["command"] == "read":
-            filepath = data["params"][0]
-            send_file(client_socket, filepath)
+            if data["command"] == "read":
+                filepath = data["params"][0]
+                send_file(client_socket, filepath)
+
+            if data["command"] == "copy":
+                source = data["params"][0]
+                destination = data["params"][1]
+                copied = copy_file(source, destination)
+                client_socket.send(json.dumps(copied).encode())
+
+            if data["command"] == "move":
+                current_path = data["params"][0]
+                new_path = data["params"][1]
+                moved = move_file(current_path, new_path)
+                client_socket.send(json.dumps(moved).encode())
+
+        if data["command_type"] == "directory":
+            if data["command"] == "cd":
+                path = data["params"][0]
+                changed = change_directory(path)
+
+            if data["command"] == "delete":
+                dir_path = data["params"][0]
+                deleted = delete_directory(dir_path)
+
+        if data["command_type"] == "system":
+            if data["command"] == "init":
+                deleted = delete_directory(root_dir)
+                client_socket.send(json.dumps(deleted).encode())
+
 
 
         client_socket.close()

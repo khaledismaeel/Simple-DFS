@@ -1,7 +1,5 @@
-import os
+import socket
 
-with os.scandir() as dir_entries:
-    for entry in dir_entries:
-        print(entry)
-        info = entry.stat()
-        print(info.st_mtime)
+s = socket.socket()
+
+print(s.getpeername())
