@@ -24,10 +24,11 @@ def create_file(sock, params):
     if os.path.exists(server_path):
         print(f'File {server_path} already exists.')
         response = {
-            'message': 'NO',
+            'status': 'FAILED',
             'details': 'File already exists.'
         }
         sock.send(json.dumps(response).encode())
+        return
         
     if not os.path.exists(os.path.dirname(server_path)):
         os.makedirs(os.path.dirname(server_path))
@@ -54,7 +55,7 @@ def create_file(sock, params):
                 print(response)
         file.write(json.dumps({'size': 0, 'containing_storage_servers': containing_storage_servers}).encode())
     response = {
-        'message': 'OK',
+        'status': 'OK',
         'details': 'File created successfully.'
     }
     sock.send(json.dumps(response).encode())
