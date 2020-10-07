@@ -33,7 +33,7 @@ def create_file(path):
                 "details": "File created Successfully"}
     except Exception as e:
         return {"message": {"status": "FAILED",
-                "details": 'Failed to delete %s. Reason: %s' % (filepath, e)}}
+                "details": 'Failed to create %s. Reason: %s' % (filepath, e)}}
 
 
 def receive_file(sock, path, filesize):
@@ -62,6 +62,7 @@ def send_file(sock, filename):
                 "details": 'Failed to find file %s. Reason: %s' % (filename, e)}
     sock.send(json.dumps(response).encode())
     sock.send((' ' * (1024 - len(json.dumps(response).encode()))).encode())
+    print()
     with open(filename, "rb") as f:
         sock.send(f.read())
 
@@ -174,8 +175,13 @@ if __name__ == '__main__':
 
         if data["command_type"] == "system":
             if data["command"] == "init":
-                deleted = delete_directory(root_dir)
-                client_socket.send(json.dumps(deleted).encode())
+                if os.path.exists(root_dir):
+                    shutil.rmtree(root_dir)
+                response = {
+                    "status": "OK",
+                    "details": f"The storage is initialized"
+                }
+                client_socket.send(json.dumps(response).encode())
 
 
         client_socket.close()
