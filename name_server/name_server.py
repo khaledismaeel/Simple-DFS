@@ -20,7 +20,7 @@ def create_file(sock, params):
     path = params[0]
     abs_path = path if path[0] == '/' else current_directory + path
     server_path = storage_directory + abs_path
-
+    
     if os.path.exists(server_path):
         print(f'File {server_path} already exists.')
         response = {
@@ -62,10 +62,19 @@ def create_file(sock, params):
 
 def read_file(sock, params):
     print(f'Performing read_file on {params}')
+    
     path = params[0]
-    server_path = storage_directory + '/' + path
+    abs_path = path if path[0] == '/' else current_directory + path
+    server_path = storage_directory + abs_path
+    
     if not os.path.exists(server_path):
-        raise ValueError(f'{server_path}: No such file.')
+        response = {
+            'status': 'FAILED',
+            'details': 'No such file or directory'
+        }
+        sock.send(json.dumps(response).encode())
+        return
+    
     with open(server_path, 'r') as file:
         file_details = json.load(file)
         containing_storage_servers = file_details['containing_storage_servers']
@@ -105,30 +114,38 @@ def read_file(sock, params):
 
 def write_file(sock, params):
     print(f'Performing write_file.')
+    
     path = params[1]
-    if path[0] == '/':
-        abs_path = path
-    else:
-        abs_path = current_directory + '/' + path
+    abs_path = path if path[0] == '/' else current_directory + path
     server_path = storage_directory + abs_path
+    
+    if not os.path.exists(server_path):
+        response = {
+            'status': 'FAILED',
+            'details': 'No such file.'
+        }
+        sock.send(json.dumps(response).encode())
+        return
+    
     tmp_file_path = '/tmp/' + ''.join(random.choices(string.ascii_lowercase, k = 16))
     print(f'Writing to file {tmp_file_path}')
     with open(tmp_file_path, 'wb') as tmp_file:
         while True:
-            data = sock.rec(1024)
+            data = sock.recv(1024)
             if data:
                 tmp_file.write(data)
             else:
                 break
-    with open(server_path, 'rb') as details_file:
+    with open(server_path, 'r') as details_file:
         details = json.load(details_file)
         details['size'] = os.path.getsize(tmp_file_path)
     print(f'New file details {details}')
-    with open(server_path, 'wb') as details_file:
+    with open(server_path, 'w') as details_file:
         details_file.write(json.dumps(details))
-    if replication_level > len(storage_servers):
-        print(f'Not enough storage servers, need {replication_level}, found {len(storage_servers)}')
     print(f'Sending to servers {details["containing_storage_servers"]}')
+    
+    successful_servers = []
+    failed_servers = []
     for server in details['containing_storage_servers']:
         print(f'Sending to server {server}')
         request = {
@@ -145,6 +162,24 @@ def write_file(sock, params):
             storage_socket.send(json.dumps(request).encode())
             with open(tmp_file_path, 'rb') as tmp_file:
                 storage_socket.sendfile(tmp_file)
+            response = json.loads(storage_socket.recv(1024).decode())
+            print(response)
+            if response['status'] == 'OK':
+                successful_servers.append(server)
+            else:
+                failed_servers.append(server)
+    if len(failed_servers) == 0:
+        response = {
+            'status': 'OK',
+            'details': f'Successfully wrote on {successful_servers}.'
+        }
+    else:
+        response = {
+            'status': 'FAILED',
+            'details': f'Successfully wrote on {successful_servers}, failed to write on {failed_servers}'
+        }
+    sock.send(json.dumps(response).encode())
+
 
 def delete_file(sock, params):
     print(f'Performing delete_file on {params}')
