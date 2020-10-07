@@ -45,7 +45,7 @@ def create_file(sock, params):
                 storage_sock.send(json.dumps(request).encode())
                 response = json.loads(storage_sock.recv(1024).decode())
                 print(response)
-        file.write(json.dumps({'size': 0, 'containing_storage_servers': containing_storage_servers}))
+        file.write(json.dumps({'size': 0, 'containing_storage_servers': containing_storage_servers}).encode())
     response = {
         'message': 'OK',
         'details': 'File created successfully.'
