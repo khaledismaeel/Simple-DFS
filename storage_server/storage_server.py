@@ -51,6 +51,7 @@ def receive_file(sock, path, filesize):
 
 
 def send_file(sock, filename):
+    filename = root_dir + filename
     try:
         filesize = os.path.getsize(filename)
         response = {"status": "OK",
@@ -59,8 +60,8 @@ def send_file(sock, filename):
     except Exception as e:
         response =  {"status": "FAILED",
                 "details": 'Failed to find file %s. Reason: %s' % (filename, e)}
-    sock.send(json.loads(response).encode())
-    s.send((' ' * (1024 - len(json.loads(response).encode()))).encode())
+    sock.send(json.dumps(response).encode())
+    sock.send((' ' * (1024 - len(json.dumps(response).encode()))).encode())
     with open(filename, "rb") as f:
         sock.send(f.read())
 
