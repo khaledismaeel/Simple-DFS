@@ -42,7 +42,6 @@ if __name__ == '__main__':
     command_type = sys.argv[1]
     command = sys.argv[2]
     params = sys.argv[3:] if len(sys.argv) > 3 else None
-    print(type(params))
 
     data = {"command_type": command_type, "command": command, "params": params}
     json_data = json.dumps(data)
