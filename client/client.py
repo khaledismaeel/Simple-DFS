@@ -73,6 +73,7 @@ if __name__ == '__main__':
         filepath = data["params"][0]
         filesize = server_data["file_size"]
         dir_path, filename = os.path.split(filepath)
+        print(dir_path, filename)
         received = receive_file(s, filename, filesize)
 
 
