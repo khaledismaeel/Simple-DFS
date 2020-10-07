@@ -29,9 +29,11 @@ def create_file(path):
     try:
         with open(filepath, "w") as file:
             pass
-        return {"message": "File Created Successfully"}
-    except:
-        return {"message": f"Could not create file: {filepath}"}
+        return {"status": "OK",
+                "details": "File created Successfully"}
+    except Exception as e:
+        return {"message": {"status": "FAILED",
+                "details": 'Failed to delete %s. Reason: %s' % (filepath, e)}}
 
 
 def receive_file(socket, path, filesize):
@@ -46,9 +48,11 @@ def receive_file(socket, path, filesize):
 
                 f.write(bytes_read)
                 progress.update(len(bytes_read))
-        return {"message": "File Dowonloaded Successfully"}
-    except:
-        return {"message": f"Could not download file: {path}"}
+        return {"status": "OK",
+                "details": "File Dowonloaded Successfully"}
+    except Exception as e:
+        return {"status": "FAILED",
+                "details": 'Failed to delete %s. Reason: %s' % (path, e)}
 
 
 def send_file(socket, filename):
