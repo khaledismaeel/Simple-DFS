@@ -8,15 +8,16 @@ port = 8800
 
 def send_file(socket, filename):
     filesize = os.path.getsize(filename)
-    progress = tqdm.tqdm(range(filesize), f"Sending {filename}", unit="B", unit_scale=True, unit_divisor=1024)
+    # progress = tqdm.tqdm(range(filesize), f"Sending {filename}", unit="B", unit_scale=True, unit_divisor=1024)
     with open(filename, "rb") as f:
-        for _ in progress:
+        read_so_far = 0
+        while read_so_far < filesize:
             bytes_read = f.read(BUFFER_SIZE)
             if not bytes_read:
                 break
-
             socket.sendall(bytes_read)
-            progress.update(len(bytes_read))
+            read_so_far += len(bytes_read)
+            # progress.update(len(bytes_read))
 
 
 def receive_file(socket, filename, filesize):

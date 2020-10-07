@@ -38,16 +38,16 @@ def create_file(path):
 
 def receive_file(socket, path, filesize):
     filepath = root_dir + path
-    progress = tqdm.tqdm(range(filesize), f"Receiving {path}", unit="B", unit_scale=True, unit_divisor=1024)
+    # progress = tqdm.tqdm(range(filesize), f"Receiving {path}", unit="B", unit_scale=True, unit_divisor=1024)
     try:
         with open(filepath, "wb") as f:
-            for _ in progress:
-                bytes_read = socket.recv(BUFFER_SIZE)
+            read_so_far = 0
+            while read_so_far < filesize:
+                bytes_read = f.recv(BUFFER_SIZE)
                 if not bytes_read:
                     break
-
-                f.write(bytes_read)
-                progress.update(len(bytes_read))
+                socket.write(bytes_read)
+                read_so_far += len(bytes_read)
         return {"status": "OK",
                 "details": "File Dowonloaded Successfully"}
     except Exception as e:
