@@ -59,6 +59,7 @@ if __name__ == '__main__':
         filename = data["params"][0]
         data["params"].append(os.path.getsize(filename))
         json_data = json.dumps(data)
+        print(json_data)
         s.send(json_data.encode())
         send_file(s, filename)
 
