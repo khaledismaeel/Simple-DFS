@@ -66,8 +66,12 @@ def send_file(socket, filename):
 
 
 def delete_file(path):
-    filepath = path + root_dir
-    os.remove(filepath)
+    filepath = root_dir + path
+    try:
+        os.remove(filepath)
+        return {"message": "File deleted Successfully"}
+    except:
+        return {"message": "Failed to delete file"}
 
 
 def get_file_info(path):
@@ -91,16 +95,10 @@ def move_file(src, dst):
         return {"message": "Failed to move file"}
 
 
-def change_directory(dir_path):
-    try:
-        os.chdir(root_dir + dir_path)
-        return {"message": f"The current directory is: {os.getcwd()}"}
-    except:
-        return {"message": "Failed to change directory, no such directory"}
-
-
 def delete_directory(dir_path):
     dir_path = root_dir + dir_path
+    if not os.path.isdir(dir_path):
+        return {"message": 'No such file or directory'}
     for filename in os.listdir(dir_path):
         file_path = os.path.join(dir_path, filename)
         try:
@@ -111,6 +109,7 @@ def delete_directory(dir_path):
             return {"message": f"The storage is initialized"}
         except Exception as e:
             return {"message": 'Failed to delete %s. Reason: %s' % (file_path, e)}
+
 
 if __name__ == '__main__':
     # command = 'register-storage-server'
@@ -144,7 +143,8 @@ if __name__ == '__main__':
 
             if data["command"] == "delete":
                 filepath = data["params"][0]
-                delete_file(filepath)
+                deleted = delete_file(filepath)
+                client_socket.send(json.dumps(deleted).encode())
 
             if data["command"] == "info":
                 filepath = data["params"][0]
@@ -167,19 +167,15 @@ if __name__ == '__main__':
                 client_socket.send(json.dumps(moved).encode())
 
         if data["command_type"] == "directory":
-            if data["command"] == "cd":
-                path = data["params"][0]
-                changed = change_directory(path)
-
             if data["command"] == "delete":
                 dir_path = data["params"][0]
                 deleted = delete_directory(dir_path)
+                client_socket.send(json.dumps(deleted).encode())
 
         if data["command_type"] == "system":
             if data["command"] == "init":
                 deleted = delete_directory(root_dir)
                 client_socket.send(json.dumps(deleted).encode())
-
 
 
         client_socket.close()
