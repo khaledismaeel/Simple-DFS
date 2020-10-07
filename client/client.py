@@ -68,8 +68,8 @@ if __name__ == '__main__':
     elif data["command"] == "read":
         s.send(json_data.encode())
         server_data = s.recv(BUFFER_SIZE).decode()
-        server_data = json.loads(server_data)
         print(server_data)
+        server_data = json.loads(server_data)
         filepath = data["params"][0]
         filename = server_data["params"][1]
         dir_path, filename = os.path.split(filepath)
