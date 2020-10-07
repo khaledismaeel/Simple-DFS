@@ -1,6 +1,23 @@
 {
     "storage_directory": "/simple-dfs",
     "current_directory": "/",
-    "replication_level": 1,
-    "storage_servers": [["10.0.1.12", 8800]]
+    "replication_level": 2,
+    "storage_servers": [
+        [
+            "10.0.1.12",
+            8800
+        ],
+        [
+            "10.0.1.12",
+            8801
+        ],
+        [
+            "10.0.1.13",
+            8800
+        ],
+        [
+            "10.0.1.13",
+            8801
+        ]
+    ]
 }
