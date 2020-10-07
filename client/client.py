@@ -22,8 +22,6 @@ def send_file(socket, filename):
 
 def receive_file(socket, filename, filesize):
     filepath = filename
-    if not os.path.exists(os.path.dirname(filepath)):
-        os.makedirs(os.path.dirname(filepath))
     progress = tqdm.tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
     try:
         with open(filepath, "wb") as f:
