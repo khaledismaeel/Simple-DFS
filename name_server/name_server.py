@@ -5,6 +5,7 @@ import json
 import random
 import string
 import shutil
+import tqdm
 
 def init(sock):
     print(f'Performing init.')
@@ -117,25 +118,56 @@ def write_file(sock, params):
     
     path = params[1]
     abs_path = path if path[0] == '/' else current_directory + path
+    if abs_path[-1] == '/':
+        _, filename = os.path.split(params[0])
+        abs_path += filename
     server_path = storage_directory + abs_path
-    
-    if not os.path.exists(server_path):
+    filesize = param[2]
+    print(f'Going to copy {params[0]} to {server_path}')
+    if os.path.exists(server_path):
         response = {
             'status': 'FAILED',
-            'details': 'No such file.'
+            'details': 'Another file with the same name already exists.'
         }
         sock.send(json.dumps(response).encode())
-        return
+
+    if not os.path.exists(os.path.dirname(server_path)):
+        os.makedirs(os.path.dirname(server_path))
+    
+    with open(server_path, 'wb') as file:
+        if replication_level > len(storage_servers):
+            print(
+                f'Not enough storage servers, current: {len(storage_servers)}, needed: {replication_level}.')
+            print(f'will replicate to the available ones for now.')
+        containing_storage_servers = random.sample(
+            storage_servers, min(replication_level, len(storage_servers)))
+        for server in containing_storage_servers:
+            request = {
+                'command_type': 'file',
+                'command': 'create',
+                'params': [
+                    abs_path
+                ]
+            }
+            with socket.socket() as storage_sock:
+                storage_sock.connect(tuple(server))
+                storage_sock.send(json.dumps(request).encode())
+                response = json.loads(storage_sock.recv(1024).decode())
+                print(response)
+        file.write(json.dumps({'size': 0, 'containing_storage_servers': containing_storage_servers}).encode())
     
     tmp_file_path = '/tmp/' + ''.join(random.choices(string.ascii_lowercase, k = 16))
     print(f'Writing to file {tmp_file_path}')
     with open(tmp_file_path, 'wb') as tmp_file:
-        while True:
-            data = sock.recv(1024)
-            if data:
-                tmp_file.write(data)
-            else:
+        print('looping')
+        progress = tqdm.tqdm(range(filesize), f"Receiving {path}", unit="B", unit_scale=True, unit_divisor=1024)
+        for _ in progress:
+            bytes_read = sock.recv(1024)
+            if not bytes_read:
                 break
+            tmp_file.write(bytes_read)
+            progress.update(len(bytes_read))
+        print('out')
     with open(server_path, 'r') as details_file:
         details = json.load(details_file)
         details['size'] = os.path.getsize(tmp_file_path)
