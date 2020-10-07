@@ -7,6 +7,12 @@ import string
 import shutil
 import tqdm
 
+def pad(s):
+    ret = s
+    while len(s) < 1024:
+        ret += b'\x00'
+    return ret
+
 def init(sock):
     print(f'Performing init.')
     for server in storage_servers:
@@ -97,14 +103,11 @@ def read_file(sock, params):
                 storage_sock.send(json.dumps(request).encode())
                 storage_response = json.loads(storage_sock.read(1024).decode())
                 print(f'Got response {storage_response}')
-                if storage_response['message'] == 'OK':
-                    sock.send(json.dumps({'message': 'OK', 'file_size': file_details['size']}))
-                    while True:
-                        data = storage_sock.recv(1024)
-                        if data:
-                            sock.write(data)
-                        else:
-                            break
+                if storage_response['status'] == 'OK':
+                    sock.send(pad(json.dumps({'message': 'OK', 'file_size': file_details['size']})))
+                    bytes_read = storage_sock.recv(storage_response['size'])
+                    sock.send(bytes_read)
+                    break
         else:
             print(f'No storage servers could return the file.')
             response = {
@@ -159,15 +162,8 @@ def write_file(sock, params):
     tmp_file_path = '/tmp/' + ''.join(random.choices(string.ascii_lowercase, k = 16))
     print(f'Writing to file {tmp_file_path}')
     with open(tmp_file_path, 'wb') as tmp_file:
-        print('looping')
-        read_so_far = 0
-        while read_so_far < filesize:
-            print(read_so_far)
-            bytes_read = sock.recv(1024)
-            print(bytes_read)
-            read_so_far += len(bytes_read)
-            tmp_file.write(bytes_read)
-        print('out')
+        bytes_read = sock.recv(filesize)
+
     with open(server_path, 'r') as details_file:
         details = json.load(details_file)
         details['size'] = os.path.getsize(tmp_file_path)
@@ -359,7 +355,9 @@ class ClientHandler(Thread):
         self.sock = sock
 
     def run(self):
-        request_header = json.loads(self.sock.recv(1024).decode())
+        bytes_read = self.sock.recv(1024)
+        print(bytes_read)
+        request_header = json.loads(bytes_read.decode())
         print(request_header)
 
         if request_header['command_type'] == 'system':
