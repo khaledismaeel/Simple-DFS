@@ -1,5 +1,6 @@
 {
     "storage_directory": "/simple-dfs",
+    "current_directory": "/",
     "replication_level": 1,
     "storage_servers": []
 }
