@@ -52,24 +52,31 @@ if __name__ == '__main__':
     s.connect((host, port))
     print("[+] Connected.")
 
-    # send the command format to the nameserver
-    s.send(json_data.encode())
 
     # dfs write filepath dir_in_dfs
     if data["command"] == "write":
         filename = data["params"][0]
+        data["params"].append(os.path.getsize(filename))
+        json_data = json.dumps(data)
+        s.send(json_data.encode())
         send_file(s, filename)
 
     # download a file from the dfs to the client
     # usage: dfs read filepath_in_dfs dir_in_client
-    if data["command"] == "read":
+    elif data["command"] == "read":
         server_data = s.recv(BUFFER_SIZE).decode()
         server_data = json.loads(server_data)
         filepath = data["params"][0]
         filename = server_data["params"][1]
         dir_path, filename = os.path.split(filepath)
         received = receive_file(s, filename)
+        s.send(json_data.encode())
         s.send(json.dumps(data).encode())
+
+    else:
+        s.send(json_data.encode())
+
+
 
     received = s.recv(BUFFER_SIZE).decode()
     print("Server response:")
