@@ -71,7 +71,7 @@ if __name__ == '__main__':
         print(server_data)
         server_data = json.loads(server_data)
         filepath = data["params"][0]
-        filesize = server_data["size"]
+        filesize = server_data["file_size"]
         dir_path, filename = os.path.split(filepath)
         received = receive_file(s, filename, filesize)
 
