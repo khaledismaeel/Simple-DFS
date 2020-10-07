@@ -5,6 +5,4 @@ ADD config.json /
 
 EXPOSE 8800
 
-RUN pip3 install tqdm
-
 CMD ["python", "-u", "./name_server.py"]

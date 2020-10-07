@@ -5,7 +5,6 @@ import json
 import random
 import string
 import shutil
-import tqdm
 
 def pad(s):
     ret = s
@@ -90,9 +89,9 @@ def read_file(sock, params):
             chosen_server = random.choice(containing_storage_servers)
             print(f'Fetching from server {chosen_server}')
             request = {
-                'command-type': '',
+                'command_type': 'file',
                 'command': 'read',
-                params: [
+                'params': [
                     path
                 ]
             }
@@ -101,10 +100,10 @@ def read_file(sock, params):
                 storage_sock.connect(tuple(chosen_server))
                 print(f'Connected. Sending request {request}')
                 storage_sock.send(json.dumps(request).encode())
-                storage_response = json.loads(storage_sock.read(1024).decode())
+                storage_response = json.loads(storage_sock.recv(1024).decode())
                 print(f'Got response {storage_response}')
                 if storage_response['status'] == 'OK':
-                    sock.send(pad(json.dumps({'message': 'OK', 'file_size': file_details['size']})))
+                    sock.send(pad(json.dumps({'message': 'OK', 'file_size': file_details['size']}).encode()))
                     bytes_read = storage_sock.recv(storage_response['size'])
                     sock.send(bytes_read)
                     break
@@ -159,14 +158,14 @@ def write_file(sock, params):
                 print(response)
         file.write(json.dumps({'size': 0, 'containing_storage_servers': containing_storage_servers}).encode())
     
-    tmp_file_path = '/tmp/' + ''.join(random.choices(string.ascii_lowercase, k = 16))
-    print(f'Writing to file {tmp_file_path}')
-    with open(tmp_file_path, 'wb') as tmp_file:
-        bytes_read = sock.recv(filesize)
-
+    # tmp_file_path = '/tmp/' + ''.join(random.choices(string.ascii_lowercase, k = 16))
+    # print(f'Writing to file {tmp_file_path}')
+    # with open(tmp_file_path, 'wb') as tmp_file:
+    bytes_read = sock.recv(filesize)
+    
     with open(server_path, 'r') as details_file:
         details = json.load(details_file)
-        details['size'] = os.path.getsize(tmp_file_path)
+        details['size'] = filesize
     print(f'New file details {details}')
     with open(server_path, 'w') as details_file:
         details_file.write(json.dumps(details))
@@ -188,8 +187,7 @@ def write_file(sock, params):
             print(f'Connected to server')
             storage_socket.connect(tuple(server))
             storage_socket.send(json.dumps(request).encode())
-            with open(tmp_file_path, 'rb') as tmp_file:
-                storage_socket.sendfile(tmp_file)
+            storage_socket.send(bytes_read)
             response = json.loads(storage_socket.recv(1024).decode())
             print(response)
             if response['status'] == 'OK':
