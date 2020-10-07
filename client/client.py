@@ -71,7 +71,6 @@ if __name__ == '__main__':
         print(server_data)
         server_data = json.loads(server_data)
         filepath = data["params"][0]
-        filename = server_data["params"][1]
         dir_path, filename = os.path.split(filepath)
         received = receive_file(s, filename)
 
