@@ -1,7 +1,5 @@
 # DS Project 2 Report
 
-[ToC]
-
 ## Introduction
 
 In this document we shall summarize our distributed file system (DFS) implementation. Note that we merged both the GitHub `README` file and the project report into this document.
