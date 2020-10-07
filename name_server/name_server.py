@@ -122,7 +122,7 @@ def write_file(sock, params):
         _, filename = os.path.split(params[0])
         abs_path += filename
     server_path = storage_directory + abs_path
-    filesize = param[2]
+    filesize = params[2]
     print(f'Going to copy {params[0]} to {server_path}')
     if os.path.exists(server_path):
         response = {
@@ -160,13 +160,13 @@ def write_file(sock, params):
     print(f'Writing to file {tmp_file_path}')
     with open(tmp_file_path, 'wb') as tmp_file:
         print('looping')
-        progress = tqdm.tqdm(range(filesize), f"Receiving {path}", unit="B", unit_scale=True, unit_divisor=1024)
-        for _ in progress:
+        read_so_far = 0
+        while read_so_far < filesize:
+            print(read_so_far)
             bytes_read = sock.recv(1024)
-            if not bytes_read:
-                break
+            print(bytes_read)
+            read_so_far += len(bytes_read)
             tmp_file.write(bytes_read)
-            progress.update(len(bytes_read))
         print('out')
     with open(server_path, 'r') as details_file:
         details = json.load(details_file)
@@ -346,7 +346,7 @@ def delete_directory(sock, params):
                 abs_path
             ]
         }
-        with socket.socket as storage_socket:
+        with socket.socket() as storage_socket:
             storage_socket.connect(tuple(server))
             storage_socket.send(json.dumps(request).encode())
             response = json.loads(storage_socket.recv(1024)).decode()
